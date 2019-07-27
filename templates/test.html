@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script>
+
+
+    function is_prime(number) {
+        for (let i = 2; i < parseInt(num ** 0.5) + 1; i += 1) {
+            if (!(num % i)) {
+                return false
+            }
+        }
+        ;
+        return true
+    }
+
+    $('#name_input').on('keyup', function (e) {
+        if (is_prime(parseInt($('#name_input').val()))) {
+            $('p').html('prime')
+        } else {
+            $('p').html('not prime')
+        }
+    })
+
+
+</script>
+</body>
+</html>
