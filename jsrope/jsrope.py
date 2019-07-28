@@ -306,6 +306,24 @@ class Element:
         except ValueError:
             raise ValueError("Invalid argument '{}' for 'method' of jsrope.Element.by".format(method))
 
+    @classmethod
+    def by_id(cls, key):
+        elem = cls()
+        elem.element = find_element_by("id", key)
+        return elem
+
+    @classmethod
+    def by_css_selector(cls, key):
+        elem = cls()
+        elem.element = find_element_by("css_selector", key)
+        return elem
+
+    @classmethod
+    def by_tag(cls, key):
+        elem = cls()
+        elem.element = find_element_by("tag", key)
+        return elem
+
     def on(self, event, flow):
         return EventHandler(self, event, flow)
 

@@ -1,10 +1,9 @@
 """
-Easy japanese era tool
+You don't want to write JavaScript? Me, too. But, Let me handle it with Python.
 -----------
 Powered by [Yamato Nagata](https://twitter.com/514YJ)
 
-[GitHub](https://github.com/delta114514/Japanera)
-[ReadTheDocs](https://japanera.readthedocs.io/en/latest/)
+[GitHub](https://github.com/delta114514/JSRope)
 
 """
 
