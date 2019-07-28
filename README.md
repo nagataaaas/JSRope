@@ -26,7 +26,7 @@ def main():
                         )
     input_box_event = input_box.on("keyup",
                                    Flow(Ajax("/", {"method": "GET", "data": {"data": input_box.get_value()}},
-                                        done=Flow(Util.Alert(input_box.get_value()))),
+                                        done=Util.Alert(input_box.get_value())),
                                         Switch({is_prime(input_box.get_value().int()): p.change_inner_html("prime"),
                                                 "else": p.change_inner_html("not prime")})
                                         )).prettify()
