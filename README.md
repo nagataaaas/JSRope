@@ -39,6 +39,43 @@ def main():
 
 app.run(port=8888)
 ```
+
+Then this will return
+
+```html
+<html><head></head><body><input id="name_input" type="text" style="width: 300px; height: 300px">
+<p>inner</p>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script>
+ $('#name_input').on('keyup', function(e) {
+    $.ajax({
+        url: "/",
+        method: "GET",
+        data: {
+            'data': $('#name_input').val()
+        }
+    }).done(alert(parseInt($('#name_input').val())));
+    if (is_prime(parseInt($('#name_input').val()))) {
+        $('p').html('prime')
+    } else {
+        $('p').html('not prime')
+    }
+});
+ function is_prime(num) {
+    for (let i = 2; i < parseInt(num ** 0.5) + 1; i += 1) {
+        if (!(num % i)) {
+            return false
+        }
+    };
+    return true
+}
+
+</script>
+</body></html>
+```
+
+
 Instllation
 ===========
 
