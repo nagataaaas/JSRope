@@ -1,0 +1,14 @@
+README.md
+setup.py
+JSRope.egg-info/PKG-INFO
+JSRope.egg-info/SOURCES.txt
+JSRope.egg-info/dependency_links.txt
+JSRope.egg-info/not-zip-safe
+JSRope.egg-info/requires.txt
+JSRope.egg-info/top_level.txt
+jsrope/__about__.py
+jsrope/__init__.py
+jsrope/django.py
+jsrope/flask.py
+jsrope/jsrope.py
+jsrope/util.py

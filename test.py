@@ -1,30 +1,28 @@
 import flask
-
-from jsrope import Element, Flow, Switch, Code, For, Return, Function, If, true, false, Ajax, Util
-from jsrope.util import substitute, Not
+from jsrope import Ajax, Function, Element, Flow, Code
+from jsrope.flask import ajax_handler
 
 app = flask.Flask(__name__)
 
+input_box = Element.by("id", "name_input")
 
-@app.route("/")
+ajax = Ajax("/data", {"method": "POST", "data": {"number": input_box.get_value()}},
+            done=Function("done", {"e": None},
+                          Flow(Element.by_tag("ul").append(Element.new("li", Code("e + ' sent'"))))))
+
+input_box_event = input_box.on("keyup", ajax)
+
+
+@app.route("/", methods=["GET", "POST"])
 def main():
-    input_box = Element.by("id", "name_input")
-    p = Element.by("tag", "p")
-    number = Code("num")
-    i = Code("i")
-    is_prime = Function("is_prime", {"num": None},
-                        Flow(For(substitute(i, 2), i < (number ** 0.5).int() + 1, i.iadd(1),
-                                 Flow(If(Not(number % i), Flow(Return(false))))
-                                 ), Return(true)
-                             )
-                        )
-    input_box_event = input_box.on("keyup",
-                                   Flow(Ajax("/", {"method": "GET", "data": {"data": input_box.get_value()}},
-                                        done=Util.Alert(input_box.get_value().int())),
-                                        Switch({is_prime(input_box.get_value().int()): p.change_inner_html("prime"),
-                                                "else": p.change_inner_html("not prime")})
-                                        )).prettify()
-    return flask.render_template("index.html", sc=Flow(input_box_event, is_prime.prettify()))
+    return flask.render_template("index.html", sc=input_box_event.prettify())
+
+
+@app.route("/data", methods=["GET", "POST"])
+@ajax_handler(ajax)
+def handler(ajax_data):
+    print(ajax_data)
+    return ajax_data["number"]
 
 
 app.run(port=8888)

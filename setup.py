@@ -27,6 +27,7 @@ setup(name=about["__title__"],
       install_requires=["jsbeautifier"],
       packages=["jsrope"],
       zip_safe=False,
+      long_description_content_type='text/markdown',
       platforms="any",
       classifiers=[
           "Development Status :: 4 - Beta",

@@ -109,5 +109,7 @@ Others gonna be written in the future.
 
 In End
 ======
+Note this: **Writing code by yourself is always the best way.**
+
 Sorry for my poor English.
 I want **you** to join us and send many pull requests about Doc, code, features and more!!

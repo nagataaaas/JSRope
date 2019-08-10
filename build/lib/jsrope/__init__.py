@@ -12,6 +12,6 @@ Powered by [Yamato Nagata](https://twitter.com/514YJ)
 from .__about__ import __version__
 
 from .jsrope import (Element, find_element_by, Flow, EventHandler, Code, Date, If, Switch, For, Return, While, Function,
-                     true, false, Ajax, Boolean, Util, Array)
+                    true, false, Ajax, Boolean, Util)
 
 from .util import Not, substitute, Escape

@@ -47,29 +47,6 @@ class JS:
         return hash(self)
 
 
-class Array(list, JS):
-    def __new__(cls, *args, **kwargs):
-        return list.__new__(cls, *args, **kwargs)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(args)
-
-    def __hash__(self):
-        return id(self)
-
-    def to_code(self):
-        return Code(str(self))
-
-    def __str__(self):
-        return "[{}]".format(",".join(list(map(Escape, list(self)))))
-
-    def __repr__(self):
-        return "{}({})".format(type(self).__name__, list(self.__iter__()))
-
-    def prettify(self):
-        return jsbeautifier.beautify(str(self))
-
-
 class Switch(dict, JS):
     def __new__(cls, *args, **kwargs):
         return dict.__new__(cls, *args, **kwargs)
@@ -308,9 +285,6 @@ class Date(JS):
         else:
             return "Date()"
 
-    def prettify(self):
-        return Code(self.to_code().prettify())
-
     def __repr__(self):
         if self.dt:
             return "{}({})".format(type(self).__name__, self.time)
@@ -318,44 +292,16 @@ class Date(JS):
             return "{}()".format(type(self).__name__)
 
 
-class Element(JS):
+class Element:
     def __init__(self, selector=""):
-        self.is_selector = False
         if selector:
             self.element = "$('{}')".format(selector)
-            self.is_selector = True
-
-        self.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
-
-        self.other_param = None
-
-    @classmethod
-    def new(cls, tag, content=None, class_=None, id_=None, name=None, **kwargs):
-        assert isinstance(tag, str)
-        assert content is None or isinstance(content, str)
-        assert class_ is None or isinstance(class_, (str, list, tuple, set))
-        assert id_ is None or isinstance(id_, str)
-        assert name is None or isinstance(name, str)
-
-        elem = cls()
-        elem.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
-
-        elem.is_selector = False
-        elem.param["tag"] = tag
-        elem.param["content"] = content
-        elem.param["class"] = class_
-        elem.param["id"] = id_
-        elem.param["name"] = name
-        elem.other_param = kwargs
-
-        return elem
 
     @classmethod
     def by(cls, method, key):
         try:
             elem = cls()
             elem.element = find_element_by(method, key)
-            elem.is_selector = True
             return elem
         except ValueError:
             raise ValueError("Invalid argument '{}' for 'method' of jsrope.Element.by".format(method))
@@ -364,21 +310,18 @@ class Element(JS):
     def by_id(cls, key):
         elem = cls()
         elem.element = find_element_by("id", key)
-        elem.is_selector = True
         return elem
 
     @classmethod
     def by_css_selector(cls, key):
         elem = cls()
         elem.element = find_element_by("css_selector", key)
-        elem.is_selector = True
         return elem
 
     @classmethod
     def by_tag(cls, key):
         elem = cls()
         elem.element = find_element_by("tag", key)
-        elem.is_selector = True
         return elem
 
     def on(self, event, flow):
@@ -427,14 +370,6 @@ class Element(JS):
         """
         return self._get_attr("html")
 
-    def serialize(self):
-        """
-        get Element.serialize()
-
-        :return: str
-        """
-        return self._get_attr("serialize")
-
     def to_code(self):
         return Code(str(self))
 
@@ -444,44 +379,8 @@ class Element(JS):
     def __repr__(self):
         return "{}({})".format(type(self).__name__, repr(self.element))
 
-    def generate_tag(self):
-        assert self.is_selector is False
-        param = self.param.copy()
-        tag, _ = param.pop("tag"), param.pop("content")
-
-        if self.param["class"]:
-            if isinstance(self.param["class"], str):
-                param["class"] = self.param["class"]
-            else:
-                param["class"] = Escape(self.param["class"])
-        else:
-            param["class"] = None
-
-        for k, v in self.other_param.items():
-            param[k] = Escape(v)
-
-        for k, v in param.items():
-            if isinstance(v, str):
-                param[k] = v.replace("\"", "&quot;")
-        tag = tag.replace("\"", "&quot;")
-
-        return "<{} {}>".format(tag, " ".join(
-            ["{}={}".format(k, v) for k, v in param.items() if v is not None])), "</{}>".format(tag)
-
-    def create_element(self):
-        assert self.is_selector is False
-        o, e = self.generate_tag()
-        content = "" if self.param["content"] is None else self.param["content"]
-        return "\"{}\"+{}{}\"{}\"".format(o, content, "+" if content else "", e)
-
-    def append(self, obj):
-        return "{}.append({})".format(str(self), Escape(obj))
-
     def __str__(self):
-        if self.is_selector:
-            return str(self.element)
-        else:
-            return self.create_element()
+        return str(self.element)
 
 
 class Flow(JS):
@@ -507,9 +406,6 @@ class Flow(JS):
 
     def __str__(self):
         return ";".join([e.to_code() if isinstance(e, JS) else e for e in self.events])
-
-    def prettify(self):
-        return Code(self.to_code().prettify())
 
     def __repr__(self):
         return "{}({})".format(type(self).__name__, repr(self.events))
