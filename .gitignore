@@ -1,3 +1,4 @@
 .idea
 .pypirc
 jsrope/__pycache__
+dist/
