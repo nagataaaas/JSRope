@@ -25,228 +25,6 @@ class JS:
     def to_code(self):
         return self.code
 
-    def __str__(self):
-        """
-        Return self.code
-        """
-        return self.to_code()
-
-
-def find_element_by(method, key):
-    if method not in element_by_methods:
-        raise ValueError("Invalid argument '{}' for 'method' of jsrope.find_element_by".format(method))
-    if method == "id":
-        return Element("#{}".format(key))
-    elif method == "css_selector":
-        return Element(key)
-    elif method == "tag":
-        return Element(key)
-
-
-class Element(JS):
-    def __init__(self, selector=""):
-        super().__init__()
-        self.is_selector = False
-        if selector:
-            self.element = "$('{}')".format(selector)
-            self.is_selector = True
-
-        self.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
-
-        self.other_param = None
-
-    @classmethod
-    def new(cls, tag, content=None, class_=None, id_=None, name=None, **kwargs):
-        assert isinstance(tag, str)
-        assert content is None or isinstance(content, str)
-        assert class_ is None or isinstance(class_, (str, list, tuple, set))
-        assert id_ is None or isinstance(id_, str)
-        assert name is None or isinstance(name, str)
-
-        elem = cls()
-        elem.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
-
-        elem.is_selector = False
-        elem.param["tag"] = tag
-        elem.param["content"] = content
-        elem.param["class"] = class_
-        elem.param["id"] = id_
-        elem.param["name"] = name
-        elem.other_param = kwargs
-
-        return elem
-
-    @classmethod
-    def by(cls, method, key):
-        try:
-            elem = cls()
-            elem.element = find_element_by(method, key)
-            elem.is_selector = True
-            return elem
-        except ValueError:
-            raise ValueError("Invalid argument '{}' for 'method' of jsrope.Element.by".format(method))
-
-    @classmethod
-    def by_id(cls, key):
-        elem = cls()
-        elem.element = find_element_by("id", key)
-        elem.is_selector = True
-        return elem
-
-    @classmethod
-    def by_css_selector(cls, key):
-        elem = cls()
-        elem.element = find_element_by("css_selector", key)
-        elem.is_selector = True
-        return elem
-
-    @classmethod
-    def by_tag(cls, key):
-        elem = cls()
-        elem.element = find_element_by("tag", key)
-        elem.is_selector = True
-        return elem
-
-    def on(self, event, flow):
-        return EventHandler(self, event, flow)
-
-    def _change_attr(self, attr, value):
-        if isinstance(value, Code):
-            return Expression("{}.{}({})".format(self.to_code(), attr, value))
-        elif isinstance(value, str):
-            return Expression("{}.{}('{}')".format(self.to_code(), attr, value.replace("'", "\\'")))
-
-    def _get_attr(self, attr):
-        return Expression("{}.{}()".format(self.to_code(), attr))
-
-    def change_value(self, value):
-        """
-        change Element's value to 'value'
-
-        :param value: str
-        :return: str
-        """
-        return self._change_attr(attr="val", value=value)
-
-    def get_value(self):
-        """
-        get Element's value
-
-        :return: str
-        """
-        return self._get_attr("val")
-
-    def change_inner_html(self, html):
-        """
-        change Element's inner_html to 'html'
-
-        :param html: str
-        :return: str
-        """
-        return self._change_attr(attr="html", value=html)
-
-    def get_inner_html(self):
-        """
-        get Element's inner_html
-
-        :return: str
-        """
-        return self._get_attr("html")
-
-    def serialize(self):
-        """
-        get Element.serialize()
-
-        :return: str
-        """
-        return self._get_attr("serialize")
-
-    def to_code(self):
-        return Code(str(self))
-
-    def __hash__(self):
-        return id(self)
-
-    def __repr__(self):
-        return "{}({})".format(type(self).__name__, repr(self.element))
-
-    def generate_tag(self):
-        assert self.is_selector is False
-        param = self.param.copy()
-        tag, _ = param.pop("tag"), param.pop("content")
-
-        if self.param["class"]:
-            if isinstance(self.param["class"], str):
-                param["class"] = self.param["class"]
-            else:
-                param["class"] = escape(self.param["class"])
-        else:
-            param["class"] = None
-
-        for k, v in self.other_param.items():
-            param[k] = escape(v)
-
-        for k, v in param.items():
-            if isinstance(v, str):
-                param[k] = v.replace("\"", "&quot;")
-        tag = tag.replace("\"", "&quot;")
-
-        return "<{} {}>".format(tag, " ".join(
-            ["{}={}".format(k, v) for k, v in param.items() if v is not None])), "</{}>".format(tag)
-
-    def create_element(self):
-        assert self.is_selector is False
-        o, e = self.generate_tag()
-        content = "" if self.param["content"] is None else self.param["content"]
-        return "\"{}\"+{}{}\"{}\"".format(o, content, "+" if content else "", e)
-
-    def append(self, obj):
-        return "{}.append({})".format(str(self), escape(obj))
-
-    def __str__(self):
-        if self.is_selector:
-            return str(self.element)
-        else:
-            return self.create_element()
-
-
-class Expression(JS):
-    def __init__(self, code):
-        super().__init__(code=code)
-
-
-class EventHandler(JS):
-    def __init__(self, element, event, handler):
-        super().__init__()
-        self.element = element
-        self.event = event
-        self.handler = handler
-
-    def to_code(self):
-        return Code(str(self))
-
-    def __hash__(self):
-        return id(self)
-
-    def __repr__(self):
-        return "{}({},{},{})".format(type(self).__name__, repr(self.element), repr(self.event), repr(self.handler))
-
-    def __str__(self):
-        return "{}.on('{}',function(e){{{}}})".format(self.element.to_code(), self.event, self.handler.to_code())
-
-    def prettify(self):
-        return jsbeautifier.beautify(str(self))
-
-
-class Code(str, JS):
-    """
-    The main class that express Code of JavaScript.
-    Use just like `str`.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        return str.__new__(cls, *args, **kwargs)
-
     def _operation(self, operation, *args):
         args = [x.__str__() for x in args]
         return self.__class__("{}({})".format(operation, ", ".join([self.to_code(), *args])))
@@ -407,11 +185,55 @@ class Code(str, JS):
         """
         return self._operation("Math.abs")
 
+    def __str__(self):
+        """
+        Return self.code
+        """
+        return self.to_code()
+
+
+class Code(str, JS):
+    """
+    The main class that express Code of JavaScript.
+    Use just like `str`.
+    """
+
+    def __new__(cls, *args, **kwargs):
+        return str.__new__(cls, *args, **kwargs)
+
     def prettify(self):
         return Code(jsbeautifier.beautify(self))
 
     def to_code(self):
         return self
+
+
+class Expression(Code):
+    def __init__(self, code):
+        super().__init__(code=code)
+
+
+class EventHandler(JS):
+    def __init__(self, element, event, handler):
+        super().__init__()
+        self.element = element
+        self.event = event
+        self.handler = handler
+
+    def to_code(self):
+        return Code(str(self))
+
+    def __hash__(self):
+        return id(self)
+
+    def __repr__(self):
+        return "{}({},{},{})".format(type(self).__name__, repr(self.element), repr(self.event), repr(self.handler))
+
+    def __str__(self):
+        return "{}.on('{}',function(e){{{}}})".format(self.element.to_code(), self.event, self.handler.to_code())
+
+    def prettify(self):
+        return jsbeautifier.beautify(str(self))
 
 
 class BaseJS(JS):
@@ -433,13 +255,6 @@ class BaseJS(JS):
         super().__init__()
         self.code = Code(code)
         self.explicit = explicit
-
-    def _operation(self, operation, *args):
-        args = [x.__str__() for x in args]
-        return self.__class__("{}({})".format(operation, ", ".join([self.to_code(), *args])))
-
-    def _operation_with_operator(self, operation, other):
-        return self.__class__("{} {} {}".format(self.to_code(), operation, other))
 
     def to_int(self):
         """
@@ -482,17 +297,195 @@ class BaseJS(JS):
 
 
 class Object(BaseJS):
-    def __init__(self, code):
-        super().__init__(code=code)
+    def __init__(self, code, explicit=False):
+        super().__init__(code=code, explicit=explicit)
 
 
-class Bool(BaseJS, JS):
+class Element(BaseJS):
+    def __init__(self, selector=""):
+        super().__init__()
+        self.is_selector = False
+        if selector:
+            self.element = "$('{}')".format(selector)
+            self.is_selector = True
+
+        self.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
+
+        self.other_param = None
+
+    @classmethod
+    def new(cls, tag, content=None, class_=None, id_=None, name=None, **kwargs):
+        assert isinstance(tag, str)
+        assert content is None or isinstance(content, str)
+        assert class_ is None or isinstance(class_, (str, list, tuple, set))
+        assert id_ is None or isinstance(id_, str)
+        assert name is None or isinstance(name, str)
+
+        elem = cls()
+        elem.param = {"class": None, "id": None, "name": None, "content": None, "tag": None}
+
+        elem.is_selector = False
+        elem.param["tag"] = tag
+        elem.param["content"] = content
+        elem.param["class"] = class_
+        elem.param["id"] = id_
+        elem.param["name"] = name
+        elem.other_param = kwargs
+
+        return elem
+
+    @classmethod
+    def by(cls, method, key):
+        try:
+            elem = cls()
+            elem.element = find_element_by(method, key)
+            elem.is_selector = True
+            return elem
+        except ValueError:
+            raise ValueError("Invalid argument '{}' for 'method' of jsrope.Element.by".format(method))
+
+    @classmethod
+    def by_id(cls, key):
+        elem = cls()
+        elem.element = find_element_by("id", key)
+        elem.is_selector = True
+        return elem
+
+    @classmethod
+    def by_css_selector(cls, key):
+        elem = cls()
+        elem.element = find_element_by("css_selector", key)
+        elem.is_selector = True
+        return elem
+
+    @classmethod
+    def by_tag(cls, key):
+        elem = cls()
+        elem.element = find_element_by("tag", key)
+        elem.is_selector = True
+        return elem
+
+    def on(self, event, flow):
+        return EventHandler(self, event, flow)
+
+    def _change_attr(self, attr, value):
+        if isinstance(value, Code):
+            return Expression("{}.{}({})".format(self.to_code(), attr, value))
+        elif isinstance(value, str):
+            return Expression("{}.{}('{}')".format(self.to_code(), attr, value.replace("'", "\\'")))
+
+    def _get_attr(self, attr):
+        return Object("{}.{}()".format(self.to_code(), attr))
+
+    def change_value(self, value):
+        """
+        change Element's value to 'value'
+
+        :param value: str
+        :return: str
+        """
+        return self._change_attr(attr="val", value=value)
+
+    def get_value(self):
+        """
+        get Element's value
+
+        :return: str
+        """
+        return self._get_attr("val")
+
+    def change_inner_html(self, html):
+        """
+        change Element's inner_html to 'html'
+
+        :param html: str
+        :return: str
+        """
+        return self._change_attr(attr="html", value=html)
+
+    def get_inner_html(self):
+        """
+        get Element's inner_html
+
+        :return: str
+        """
+        return self._get_attr("html")
+
+    def serialize(self):
+        """
+        get Element.serialize()
+
+        :return: str
+        """
+        return self._get_attr("serialize")
+
+    def to_code(self):
+        return Code(str(self))
+
+    def __hash__(self):
+        return id(self)
+
+    def __repr__(self):
+        return "{}({})".format(type(self).__name__, repr(self.element))
+
+    def generate_tag(self):
+        assert self.is_selector is False
+        param = self.param.copy()
+        tag, _ = param.pop("tag"), param.pop("content")
+
+        if self.param["class"]:
+            if isinstance(self.param["class"], str):
+                param["class"] = self.param["class"]
+            else:
+                param["class"] = escape(self.param["class"])
+        else:
+            param["class"] = None
+
+        for k, v in self.other_param.items():
+            param[k] = escape(v)
+
+        for k, v in param.items():
+            if isinstance(v, str):
+                param[k] = v.replace("\"", "&quot;")
+        tag = tag.replace("\"", "&quot;")
+
+        return "<{} {}>".format(tag, " ".join(
+            ["{}={}".format(k, v) for k, v in param.items() if v is not None])), "</{}>".format(tag)
+
+    def create_element(self):
+        assert self.is_selector is False
+        o, e = self.generate_tag()
+        content = "" if self.param["content"] is None else self.param["content"]
+        return "\"{}\"+{}{}\"{}\"".format(o, content, "+" if content else "", e)
+
+    def append(self, obj):
+        return "{}.append({})".format(str(self), escape(obj))
+
+    def __str__(self):
+        if self.is_selector:
+            return str(self.element)
+        else:
+            return self.create_element()
+
+
+def find_element_by(method, key):
+    if method not in element_by_methods:
+        raise ValueError("Invalid argument '{}' for 'method' of jsrope.find_element_by".format(method))
+    if method == "id":
+        return Element("#{}".format(key))
+    elif method == "css_selector":
+        return Element(key)
+    elif method == "tag":
+        return Element(key)
+
+
+class Bool(Object):
     """
     The class that express Boolean object.
     """
 
     def __init__(self, code="", explicit=False):
-        super().__init__(code, explicit)
+        super().__init__(code)
         if isinstance(code, (str, BaseJS)):
             if not explicit and code[:1] + code[-1:] != "()" and not code.startswith("Boolean("):
                 self.code = Code("({})".format(code))
@@ -517,7 +510,7 @@ class Bool(BaseJS, JS):
         return Bool("!" + self.to_code(), explicit=False)
 
 
-class Int(BaseJS, JS):
+class Int(Object):
     """
     The class that express Integer object.
     """
@@ -526,7 +519,7 @@ class Int(BaseJS, JS):
         super().__init__(code, explicit)
 
 
-class Str(BaseJS, JS):
+class Str(Object):
     """
     The class that express String object.
     """
@@ -545,7 +538,7 @@ class Str(BaseJS, JS):
             return "'{}'".format(self.to_code())
 
 
-class Float(BaseJS, JS):
+class Float(Object):
     """
     The class that express Float object.
     """
@@ -554,7 +547,7 @@ class Float(BaseJS, JS):
         super().__init__(code, explicit)
 
 
-class Return(JS):
+class Return(BaseJS):
     """
     The class for express return expression
 
@@ -631,7 +624,7 @@ class While(JS):
         self.code = Expression("while({}){{{}}}".format(condition, flow))
 
 
-class Switch(dict, BaseJS):
+class Switch(dict, JS):
     def __new__(cls, *args, **kwargs):
         return dict.__new__(cls, *args, **kwargs)
 
@@ -718,7 +711,7 @@ class Function(JS):
             argument[k] = v
             edited.add(k)
 
-        argument_str = ", ".join([v if v is not None else "" for v in argument.values()])
+        argument_str = ", ".join([str(v) if v is not None else "" for v in argument.values()])
 
         if self.name:
             return Object("{}({})".format(self.name, argument_str))
@@ -856,7 +849,7 @@ class Date(JS):
             return "{}()".format(type(self).__name__)
 
 
-class Array(list, BaseJS):
+class Array(list, JS):
     def __new__(cls, *args, **kwargs):
         return list.__new__(cls, *args, **kwargs)
 

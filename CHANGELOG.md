@@ -1,3 +1,6 @@
+# v0.1.1
+- Change inheriting layer.
+
 # v0.1.0
 - Change many `functions` to `class`
 - Rename `util.Not` to `util.negative`
