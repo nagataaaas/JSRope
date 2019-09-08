@@ -1,8 +1,13 @@
+# v0.1.2
+- Added `jquery3_url`, `jquery3_script`, `jquery2_url` and `jquery2_script` to `Util`.
+- Added `floor`, `ceil` and `round` method to `Int` and `Float` class.
+- Removed inplace methods from `JS` class.
+
 # v0.1.1
-- Change inheriting layer.
+- Changed inheriting layer.
 
 # v0.1.0
-- Change many `functions` to `class`
+- Changed many `functions` to `class`
 - Rename `util.Not` to `util.negative`
 - Rename `util.Escape` to `util.escape`
 - Added `Int`, `Float`, `String`, `Expression`, `Object` and `BaseJS` class.

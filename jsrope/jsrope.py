@@ -107,36 +107,6 @@ class JS:
         """
         return self._operation_with_operator(operation="**=", other=other)
 
-    def __iadd__(self, other):
-        """
-        self += other
-        """
-        return self._operation_with_operator(operation="+=", other=other)
-
-    def __isub__(self, other):
-        """
-        self -= other
-        """
-        return self._operation_with_operator(operation="-=", other=other)
-
-    def __imul__(self, other):
-        """
-        self *= other
-        """
-        return self._operation_with_operator(operation="*=", other=other)
-
-    def __idiv__(self, other):
-        """
-        self /= other
-        """
-        return self._operation_with_operator(operation="/=", other=other)
-
-    def __ipow__(self, other):
-        """
-        self **= other
-        """
-        return self._operation_with_operator(operation="**=", other=other)
-
     def __eq__(self, other):
         """
         self === other
@@ -266,14 +236,14 @@ class BaseJS(JS):
     def to_str(self):
         """
         Returns jsrope.Str object made with self.code and explicit type declaration
-        :return: Int()
+        :return: Str()
         """
         return Str(self._operation("String").to_code(), True)
 
     def to_float(self):
         """
         Returns jsrope.Float object made with self.code and explicit type declaration
-        :return: Int()
+        :return: Float()
         """
         return Float(self._operation("parseFloat").to_code(), True)
 
@@ -518,6 +488,18 @@ class Int(Object):
     def __init__(self, code="", explicit=False):
         super().__init__(code, explicit)
 
+    def floor(self):
+        return self._operation("Math.floor")
+
+    def ceil(self):
+        return self._operation("Math.ceil")
+
+    def __round__(self, n=0):
+        return Int("{} * {}".format(self.code, 10 ** n))._operation("Math.round")._operation_with_operator("/", 10**n)
+
+    def round(self, n=0):
+        return round(self, n)
+
 
 class Str(Object):
     """
@@ -545,6 +527,18 @@ class Float(Object):
 
     def __init__(self, code="", explicit=False):
         super().__init__(code, explicit)
+
+    def floor(self):
+        return self._operation("Math.floor")
+
+    def ceil(self):
+        return self._operation("Math.ceil")
+
+    def __round__(self, n=0):
+        return Int("{} * {}".format(self.code, 10 ** n))._operation("Math.round")._operation_with_operator("/", 10**n)
+
+    def round(self, n=0):
+        return round(self, n)
 
 
 class Return(BaseJS):
