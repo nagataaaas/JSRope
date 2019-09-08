@@ -30,7 +30,7 @@ def ajax_handler(ajax, data_name="ajax_data"):
 
 def dig_nest(target, method):
     keys = list(all_keys(target))
-    data = target
+    data = dict(target)
     for k, t in keys:
         if len(k) > 1:
             _k = "{}[{}]".format(k[0], "][".join(k[1:]))
@@ -65,4 +65,14 @@ def update(dict_base, other):
         if isinstance(v, dict) and k in dict_base:
             update(dict_base[k], v)
         else:
-            dict_base[k] = v
+            if isinstance(dict_base[k], jsrope.JS):
+                if hasattr(dict_base[k], "handler") and dict_base[k].handler:
+                    dict_base[k] = dict_base[k].handler(v)
+                elif isinstance(dict_base[k], jsrope.Int):
+                    dict_base[k] = int(v)
+                elif isinstance(dict_base[k], jsrope.Float):
+                    dict_base[k] = float(v)
+                else:
+                    dict_base[k] = str(v)
+            else:
+                dict_base[k] = str(v)

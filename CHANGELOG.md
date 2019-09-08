@@ -1,3 +1,8 @@
+# v0.1.3
+- Changed some implementation of `Date`.
+- Added some methods to `Date`
+- Now `ajax_handler` escapes `Int`, `Float` properly. And if `handler` attribute is not `None`, apply `handler` to value and return it.
+
 # v0.1.2
 - Added `jquery3_url`, `jquery3_script`, `jquery2_url` and `jquery2_script` to `Util`.
 - Added `floor`, `ceil` and `round` method to `Int` and `Float` class.

@@ -16,8 +16,9 @@ class JS:
     All class that related to JavaScript should inherit this class.
     """
 
-    def __init__(self, code=""):
+    def __init__(self, code="", handler=None):
         self.code = code
+        self.handler = handler
 
     def prettify(self):
         return jsbeautifier.beautify(self.to_code())
@@ -102,36 +103,6 @@ class JS:
         return self._operation_with_operator(operation="/=", other=other)
 
     def ipow(self, other):
-        """
-        self **= other
-        """
-        return self._operation_with_operator(operation="**=", other=other)
-
-    def __iadd__(self, other):
-        """
-        self += other
-        """
-        return self._operation_with_operator(operation="+=", other=other)
-
-    def __isub__(self, other):
-        """
-        self -= other
-        """
-        return self._operation_with_operator(operation="-=", other=other)
-
-    def __imul__(self, other):
-        """
-        self *= other
-        """
-        return self._operation_with_operator(operation="*=", other=other)
-
-    def __idiv__(self, other):
-        """
-        self /= other
-        """
-        return self._operation_with_operator(operation="/=", other=other)
-
-    def __ipow__(self, other):
         """
         self **= other
         """
@@ -247,7 +218,7 @@ class BaseJS(JS):
 
     """
 
-    def __init__(self, code="", explicit=False):
+    def __init__(self, code="", explicit=False, handler=None):
         """
         :param code: The code which instance going to have
         :param explicit: Whether this instance made with explicit type declaration.
@@ -255,6 +226,7 @@ class BaseJS(JS):
         super().__init__()
         self.code = Code(code)
         self.explicit = explicit
+        self.handler = handler
 
     def to_int(self):
         """
@@ -266,14 +238,14 @@ class BaseJS(JS):
     def to_str(self):
         """
         Returns jsrope.Str object made with self.code and explicit type declaration
-        :return: Int()
+        :return: Str()
         """
         return Str(self._operation("String").to_code(), True)
 
     def to_float(self):
         """
         Returns jsrope.Float object made with self.code and explicit type declaration
-        :return: Int()
+        :return: Float()
         """
         return Float(self._operation("parseFloat").to_code(), True)
 
@@ -297,8 +269,8 @@ class BaseJS(JS):
 
 
 class Object(BaseJS):
-    def __init__(self, code, explicit=False):
-        super().__init__(code=code, explicit=explicit)
+    def __init__(self, code, explicit=False, handler=None):
+        super().__init__(code=code, explicit=explicit, handler=handler)
 
 
 class Element(BaseJS):
@@ -484,7 +456,7 @@ class Bool(Object):
     The class that express Boolean object.
     """
 
-    def __init__(self, code="", explicit=False):
+    def __init__(self, code="", explicit=False, handler=None):
         super().__init__(code)
         if isinstance(code, (str, BaseJS)):
             if not explicit and code[:1] + code[-1:] != "()" and not code.startswith("Boolean("):
@@ -496,6 +468,7 @@ class Bool(Object):
                 self.code = Code("true")
             else:
                 self.code = Code("false")
+        self.handler = handler
 
     def negative(self):
         """
@@ -515,8 +488,20 @@ class Int(Object):
     The class that express Integer object.
     """
 
-    def __init__(self, code="", explicit=False):
-        super().__init__(code, explicit)
+    def __init__(self, code="", explicit=False, handler=None):
+        super().__init__(code=code, explicit=explicit, handler=handler)
+
+    def floor(self):
+        return self._operation("Math.floor")
+
+    def ceil(self):
+        return self._operation("Math.ceil")
+
+    def __round__(self, n=0):
+        return Int("{} * {}".format(self.code, 10 ** n))._operation("Math.round")._operation_with_operator("/", 10 ** n)
+
+    def round(self, n=0):
+        return round(self, n)
 
 
 class Str(Object):
@@ -524,8 +509,8 @@ class Str(Object):
     The class that express String object.
     """
 
-    def __init__(self, code="", explicit=False):
-        super().__init__(code, explicit)
+    def __init__(self, code="", explicit=False, handler=None):
+        super().__init__(code=code, explicit=explicit, handler=handler)
 
     def __neg__(self):
         return Code("-" + self.to_code())
@@ -543,8 +528,20 @@ class Float(Object):
     The class that express Float object.
     """
 
-    def __init__(self, code="", explicit=False):
-        super().__init__(code, explicit)
+    def __init__(self, code="", explicit=False, handler=None):
+        super().__init__(code=code, explicit=explicit, handler=handler)
+
+    def floor(self):
+        return self._operation("Math.floor")
+
+    def ceil(self):
+        return self._operation("Math.ceil")
+
+    def __round__(self, n=0):
+        return Int("{} * {}".format(self.code, 10 ** n))._operation("Math.round")._operation_with_operator("/", 10 ** n)
+
+    def round(self, n=0):
+        return round(self, n)
 
 
 class Return(BaseJS):
@@ -805,7 +802,7 @@ class Ajax(JS):
 
 
 class Date(JS):
-    def __init__(self, dt=None):
+    def __init__(self, dt=None, handler=None):
         super().__init__()
         if isinstance(dt, datetime.datetime):
             self.dt = dt
@@ -819,25 +816,64 @@ class Date(JS):
             self.dt = None
             self.time = None
         self.code = self.to_code()
+        self.handler = handler
+
+    @classmethod
+    def parse(cls, fmt):
+        return "Data.parse({})".format(escape(fmt))
+
+    @classmethod
+    def now(cls, handler=None):
+        return Date("Date.now()", handler=handler)
+
+    @classmethod
+    def from_timestamp(cls, timestamp):
+        if isinstance(timestamp, (int, float)):
+            return datetime.datetime.fromtimestamp(timestamp / 1000)
+        else:
+            return datetime.datetime.fromtimestamp(float(timestamp) / 1000)
+
+    def get_time(self):
+        return Float("{}.getTime()".format(self.to_code()))
+
+    def get_year(self):
+        return Int("{}.getFullYear()".format(self.to_code()))
+
+    def get_month(self):
+        return Int("{}.getMonth()".format(self.to_code()))
+
+    def get_date(self):
+        return Int("{}.getDate()".format(self.to_code()))
+
+    def get_hours(self):
+        return Int("{}.getHours()".format(self.to_code()))
+
+    def get_minutes(self):
+        return Int("{}.getMinutes()".format(self.to_code()))
+
+    def get_seconds(self):
+        return Int("{}.getSeconds()".format(self.to_code()))
+
+    def get_milliseconds(self):
+        return Int("{}.getMilliseconds()".format(self.to_code()))
+
+    def get_day(self):
+        return Int("{}.getDay()".format(self.to_code()))
 
     def to_code(self):
         return Code(str(self))
 
-    @classmethod
-    def now(cls):
-        return Object("Date.now()")
-
     def __call__(self):
         if self.time:
-            return Object("new Date({})".format(self.time))
+            return Date("new Date({})".format(self.time), handler=self.handler)
         else:
-            return Object("new Date()")
+            return Date("new Date()", handler=self.handler)
 
     def __str__(self):
         if self.time:
-            return "Date({})".format(self.time)
+            return "new Date({})".format(self.time)
         else:
-            return "Date()"
+            return "new Date()"
 
     def prettify(self):
         return Code(self.to_code().prettify())
